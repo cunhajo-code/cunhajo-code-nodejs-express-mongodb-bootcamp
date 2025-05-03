@@ -1,0 +1,14 @@
+{
+  "name": "asynchronous-js-written",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jose Cunha",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "superagent": "^10.2.0"
+  }
+}

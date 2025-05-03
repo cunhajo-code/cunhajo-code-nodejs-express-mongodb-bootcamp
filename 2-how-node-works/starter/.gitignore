@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# dotenv environment variables
+.env
+
+# logs
+*.log
+npm-debug.log*
+
+# system files
+.DS_Store
+Thumbs.db
+
+# optional
+*.swp
