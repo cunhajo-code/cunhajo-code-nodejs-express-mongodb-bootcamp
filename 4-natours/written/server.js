@@ -1,10 +1,36 @@
+/* eslint-disable no-undef */
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const app = require('./app');
 
 dotenv.config({ path: './config.env' });
 
-// eslint-disable-next-line no-undef
-console.log(process.env);
+const app = require('./app');
+
+// console.log(`Connection string = ${process.env.DEV_DB_CONNETIONSTRING}`);
+// console.log(`DB User = ${process.env.DEV_USER}`);
+// console.log(`DB password = ${process.env.DEV_PASSWORD}`);
+
+const db = process.env.DEV_DB_CONNETIONSTRING.replace(
+  '<userid>',
+  process.env.DEV_USER
+).replace('<db_password>', process.env.DEV_PASSWORD);
+
+console.log(`Complete Connection String = ${db}`);
+
+mongoose
+  .connect(db, {
+    useCreateIndex: true,
+    useFindAndModify: false,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then((conn) => {
+    // console.log(conn.connections);
+    // console.log(`Db Connection: ${db} - succesful.`);
+    console.log(`Db Connection ${conn.Connection.name} - succesful.`);
+  });
+
+// console.log(process.env);
 
 const port = 3000;
 app.listen(port, () => {
