@@ -22,26 +22,45 @@ exports.getAllTours = async (req, resp) => {
   try {
     //Build Query
 
+    // 1. Filtering
+    console.log(req.query);
+
     const queryObj = { ...req.query };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
 
     excludedFields.forEach((el) => delete queryObj[el]);
 
-    console.log(req.query, ' ', queryObj);
+    console.log(queryObj);
 
-    const query = Tour.find(queryObj);
-    //
+    // 2. Advanced filtering
 
-    // const tours = await Tour.find();
+    // creating a queryStr string variable from query Object with JSON.stringiify
+    // and using .replace on that string inline with regular expression
+    // to add the $ reuired to convert operators into MongDB operators for each occurence
+    // and finally back to objects finally JOSN.Parse
+    let queryStr = JSON.parse(
+      JSON.stringify(queryObj).replace(
+        /\b(gte|gt|lte|lt)\b/g,
+        (match) => `$${match}`
+      )
+    );
+
+    console.log(queryStr);
+
+    // { difficulty: 'easy', duration: {$gte: 5 }  }
+    // { difficulty: 'easy', duration: { gte: '5' } }
+    // gte, gt lte, lt
+
+    const query = Tour.find(queryStr);
+
+    // Execute query
+    const tours = await query;
 
     // const tours = await Tour.find()
     //   .where('duration')
     //   .equals(5)
     //   .where('difficulty')
     //   .equals('easy');
-
-    // Execute query
-    const tours = await query;
 
     // Send Response
     resp.status(200).json({
