@@ -1,21 +1,23 @@
 const Tour = require('./../models/tourModel');
 
-// removed, used in code before MongoDB Mongoose code
-// const tours = JSON.parse(
-//   // eslint-disable-next-line no-undef
-//   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
-// );
-
-// exports.CheckID = (req, resp, next, val) => {
-//   console.log(`Tour id is : ${val}`);
-//   if (req.params.id * 1 > tours.length) {
-//     return resp.status(404).json({
-//       status: 'fail',
-//       message: 'tour not found',
-//     });
-//   }
-//   next();
-// };
+// #region removed code, used before MongoDB Mongoose code
+/*
+ const tours = JSON.parse(
+    // eslint-disable-next-line no-undef
+    fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
+  );
+  exports.CheckID = (req, resp, next, val) => {
+    console.log(`Tour id is : ${val}`);
+    if (req.params.id * 1 > tours.length) {
+      return resp.status(404).json({
+        status: 'fail',
+        message: 'tour not found',
+      });
+    }
+    next();
+  };
+*/
+// #endregion
 
 // tours handlers
 exports.getAllTours = async (req, resp) => {
@@ -26,18 +28,30 @@ exports.getAllTours = async (req, resp) => {
     // console.log(req.query);
 
     const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    const excludedFields = ['sort', 'fields', 'page', 'limit'];
 
     excludedFields.forEach((el) => delete queryObj[el]);
 
     // console.log(queryObj);
 
     // 1b. Advanced filtering
+    // #region Advance filtering Notes
+    /*
+       creating a queryStr string variable from query Object with JSON.stringiify
+       and using .replace on that string inline with regular expression
+       to add the $ reuired to convert operators into MongDB operators for each occurence
+       and finally back to objects finally JOSN.Parse
+       So assuming the following possibilities: gte, gt lte, lt
+       The goal is to transform this from the url
+       { difficulty: 'easy', duration: { gte: '5' } }
+       To this for the query object
+       { difficulty: 'easy', duration: {$gte: 5 }  }
+    */
+    // #endregion
 
-    // creating a queryStr string variable from query Object with JSON.stringiify
-    // and using .replace on that string inline with regular expression
-    // to add the $ reuired to convert operators into MongDB operators for each occurence
-    // and finally back to objects finally JOSN.Parse
+    // the parse is accomplished by using a regular expresion
+    // regular expresion captures and whole word instance of operators
+    // and replaces with the saem but prefixed by $ for query object syntax
     let queryStr = JSON.parse(
       JSON.stringify(queryObj).replace(
         /\b(gte|gt|lte|lt)\b/g,
@@ -46,10 +60,6 @@ exports.getAllTours = async (req, resp) => {
     );
 
     // console.log(queryStr);
-
-    // { difficulty: 'easy', duration: {$gte: 5 }  }
-    // { difficulty: 'easy', duration: { gte: '5' } }
-    // gte, gt lte, lt
 
     let query = Tour.find(queryStr);
 
@@ -75,14 +85,67 @@ exports.getAllTours = async (req, resp) => {
       // in this case, always exlude th MogoDB generated __v field
       query = query.select('-__v');
     }
+
+    // 4. Pagination features
+    // #region Pagination Notes
+    /*
+       by now query looks something like query.[filters].sort().select()
+       and on top of this is where we need to apply the values from the url to .skip().limit()
+       compiled query now specifies all prior filtering, sorting and fields selection
+        ( state of filtering sorting and field selection) as start for pagination
+    */
+    // #endregion
+
+    if (req.query.page) {
+      // #region Postman Pagination testing Logic notes
+      /*
+        1.  Establish limits based on number of records remaining after current query applied
+            number of records in result set, last page given selected limit from query string.
+
+        2.  Evaluate selected page from query string. 
+            If it's less than zero ( normally return a bade request for an API call)
+              set the targetPage to 1
+            If it's greater than the calculated last page containing ANY rows
+              set it to the calculated last page
+            If its in the acceptable range of pages for this record count and limit
+              set the traget page to the requested page
+
+        3.  Append the page and limit to the query and apply, to retrun only the targeted rows.
+      */
+      // #endregion
+
+      // counts the records AFTER the query is applied
+      const numTours = await Tour.countDocuments(query);
+      console.log('Tours in selection criteria: ', numTours);
+
+      const page = req.query.page * 1;
+      const limit = req.query.limit * 1;
+      const lastPage = Math.ceil(numTours / limit);
+      let targetPage = 1;
+      if (page > 1 && page <= lastPage) {
+        targetPage = page;
+      } else if (page > lastPage) {
+        targetPage = lastPage;
+      } else if (page < 1) {
+        targetPage = 1;
+      }
+
+      const skip = (targetPage - 1) * limit;
+      query = query.skip(skip).limit(limit);
+    }
+
     // Execute query
     const tours = await query;
 
+    // #region alternate code showing expanded query with where and equals clauses
+    /*
     // const tours = await Tour.find()
     //   .where('duration')
     //   .equals(5)
     //   .where('difficulty')
     //   .equals('easy');
+    */
+    // #endregion
 
     // Send Response
     resp.status(200).json({
@@ -150,24 +213,24 @@ exports.updateTour = async (req, resp) => {
 exports.createTour = async (req, resp) => {
   // #region old createTour Logic pre Mongoose and Schema
   /*
-  // console.log(req.body);
-  //pseudo code to fake getting a new id for the elements in the tours file we are using
-  // const newId = tours[tours.length - 1].id + 1;
-  // const newTour = Object.assign({ id: newId }, req.body);
-  // tours.push(newTour);
-  // fs.writeFile(
-  //   // eslint-disable-next-line no-undef
-  //   `${__dirname}/dev-data/data/tours-simple.json`,
-  //   JSON.stringify(tours),
-  //   (err) => {
-  //     resp.status(201).json({
-  //       status: 'success',
-  //       data: {
-  //         tour: newTour,
-  //       },
-  //     });
-  //   }
-  // );
+   console.log(req.body);
+  pseudo code to fake getting a new id for the elements in the tours file we are using
+   const newId = tours[tours.length - 1].id + 1;
+   const newTour = Object.assign({ id: newId }, req.body);
+   tours.push(newTour);
+   fs.writeFile(
+     // eslint-disable-next-line no-undef
+     `${__dirname}/dev-data/data/tours-simple.json`,
+     JSON.stringify(tours),
+     (err) => {
+       resp.status(201).json({
+         status: 'success',
+         data: {
+           tour: newTour,
+         },
+       });
+     }
+   );
   */
   // #endregion
 

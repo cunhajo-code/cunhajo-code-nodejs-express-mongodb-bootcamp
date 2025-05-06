@@ -18,7 +18,15 @@ app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
 app.use((req, resp, next) => {
-  console.log('Hello from the midleware!');
+  //   console.log('Hello from the midleware!');
+  const postmanReqName = req.headers['postmanreqname']; // Header names are lowercase
+
+  if (postmanReqName) {
+    console.log(`📥 Postman Request: "${postmanReqName}" was received`);
+  } else {
+    console.log(`📥 Request received without postmanReqName header`);
+  }
+
   next();
 });
 
