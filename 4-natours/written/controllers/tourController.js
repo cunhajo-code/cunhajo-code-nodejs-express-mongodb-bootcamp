@@ -22,17 +22,17 @@ exports.getAllTours = async (req, resp) => {
   try {
     //Build Query
 
-    // 1. Filtering
-    console.log(req.query);
+    // 1a. Filtering
+    // console.log(req.query);
 
     const queryObj = { ...req.query };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
 
     excludedFields.forEach((el) => delete queryObj[el]);
 
-    console.log(queryObj);
+    // console.log(queryObj);
 
-    // 2. Advanced filtering
+    // 1b. Advanced filtering
 
     // creating a queryStr string variable from query Object with JSON.stringiify
     // and using .replace on that string inline with regular expression
@@ -45,13 +45,23 @@ exports.getAllTours = async (req, resp) => {
       )
     );
 
-    console.log(queryStr);
+    // console.log(queryStr);
 
     // { difficulty: 'easy', duration: {$gte: 5 }  }
     // { difficulty: 'easy', duration: { gte: '5' } }
     // gte, gt lte, lt
 
-    const query = Tour.find(queryStr);
+    let query = Tour.find(queryStr);
+
+    // 2. Sorting
+    if (req.query.sort) {
+      //add sort criteria from url, replacing commas with spaces
+      const sortBy = req.query.sort.split(',').join(' ');
+      query = query.sort(sortBy);
+    } else {
+      //set default sort of created
+      query = query.sort('-createdAt');
+    }
 
     // Execute query
     const tours = await query;
