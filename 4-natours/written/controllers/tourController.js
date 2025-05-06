@@ -63,6 +63,18 @@ exports.getAllTours = async (req, resp) => {
       query = query.sort('-createdAt');
     }
 
+    // 3. Field filtering
+    if (req.query.fields) {
+      //include ONLY the selected field names
+      //id is also sent
+      const fields = req.query.fields.split(',').join(' ');
+      // console.log(fields);
+      query = query.select(fields);
+    } else {
+      //exclude the fields named prefixed with a minus
+      // in this case, always exlude th MogoDB generated __v field
+      query = query.select('-__v');
+    }
     // Execute query
     const tours = await query;
 
