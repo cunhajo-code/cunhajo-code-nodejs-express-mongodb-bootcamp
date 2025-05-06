@@ -96,7 +96,8 @@ exports.getAllTours = async (req, resp) => {
     */
     // #endregion
 
-    if (req.query.page) {
+    // so condition was changed to allow the limit url string without page
+    if (req.query.page || req.query.limit) {
       // #region Postman Pagination testing Logic notes
       /*
         1.  Establish limits based on number of records remaining after current query applied
@@ -118,8 +119,10 @@ exports.getAllTours = async (req, resp) => {
       const numTours = await Tour.countDocuments(query);
       console.log('Tours in selection criteria: ', numTours);
 
-      const page = req.query.page * 1;
+      // page intialized to one if not specified with nullish coalescing operator
+      const page = (req.query.page ?? 1) * 1;
       const limit = req.query.limit * 1;
+      console.log(`url page: ${page},\n url limit: ${limit}`);
       const lastPage = Math.ceil(numTours / limit);
       let targetPage = 1;
       if (page > 1 && page <= lastPage) {
