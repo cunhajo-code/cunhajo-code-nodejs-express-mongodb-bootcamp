@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
 const Tour = require('./../models/tourModel');
-const APIFeatures = require('./utils/apiFeatures');
+const APIFeatures = require('./../utils/apiFeatures');
 
-// tours handlers
 exports.AliasTop5CheapTours = (req, resp, next) => {
   req.query.limit = '5';
   req.query.sort = '-ratingsAverage,price';
@@ -11,11 +10,50 @@ exports.AliasTop5CheapTours = (req, resp, next) => {
   next();
 };
 
+exports.getTourStats = async (req, resp) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          //_id: '$difficulty',
+          _id: { $toUpper: '$difficulty' },
+          numTours: { $sum: 1 },
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      {
+        $sort: { avgprice: 1 },
+      },
+      // {
+      //   $match: { _id: { $ne: 'EASY' } },
+      // },
+    ]);
+
+    resp.status(200).json({
+      status: 'success',
+      data: {
+        stats,
+      },
+    });
+  } catch (error) {
+    resp.status(404).json({
+      status: 'Failed',
+      message: error,
+    });
+  }
+};
+
+// tours handlers
 exports.getAllTours = async (req, resp) => {
   try {
     // Execute query
-
-    console.log('calling APIFeatures');
 
     const apiFeatures = new APIFeatures(Tour.find(), req.query)
       .filter()
@@ -41,7 +79,7 @@ exports.getAllTours = async (req, resp) => {
   } catch (error) {
     resp.status(404).json({
       status: 'Failed',
-      message: error,
+      message: error.message,
     });
   }
 };

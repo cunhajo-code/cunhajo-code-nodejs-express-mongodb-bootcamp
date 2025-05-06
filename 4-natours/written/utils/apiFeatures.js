@@ -2,8 +2,8 @@ class APIFeatures {
   constructor(query, queryString) {
     this.query = query;
     this.queryString = queryString;
-    return this;
   }
+
   filter() {
     console.log(this.queryString);
 
@@ -82,4 +82,4 @@ class APIFeatures {
   }
 }
 
-modules.export = APIFeatures;
+module.exports = APIFeatures;
