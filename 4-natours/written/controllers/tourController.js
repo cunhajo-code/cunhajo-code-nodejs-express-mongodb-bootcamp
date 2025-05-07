@@ -133,7 +133,6 @@ exports.getAllTours = async (req, resp) => {
       .selection();
 
     const rowCount = await Tour.countDocuments(apiFeatures.filterObj);
-    console.log(rowCount);
 
     apiFeatures.pagination(rowCount);
 
