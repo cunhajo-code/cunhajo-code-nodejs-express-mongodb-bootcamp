@@ -50,7 +50,79 @@ exports.getTourStats = async (req, resp) => {
   }
 };
 
-// tours handlers
+exports.getMonthlyPlan = async (req, resp) => {
+  try {
+    const year = req.params.year * 1;
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          TourStarts: { $sum: 1 },
+          Tours: { $push: '$name' },
+        },
+      },
+      {
+        $addFields: { Month: '$_id' },
+      },
+      {
+        $sort: { _id: 1 }, // ascending month order
+      },
+      {
+        $project: {
+          Month: {
+            $arrayElemAt: [
+              [
+                '',
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December',
+              ],
+              '$Month',
+            ],
+          },
+          _id: 0,
+          TourStarts: 1,
+          Tours: 1,
+        },
+      },
+    ]);
+
+    resp.status(200).json({
+      status: 'success',
+      results: plan.length,
+      data: {
+        plan,
+      },
+    });
+  } catch (error) {
+    resp.status(404).json({
+      status: 'Failed',
+      message: error,
+    });
+  }
+};
+
+// tours crud handlers
 exports.getAllTours = async (req, resp) => {
   try {
     // Execute query
