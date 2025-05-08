@@ -17,18 +17,23 @@ const db = process.env.DEV_DB_CONNETIONSTRING.replace(
 
 console.log(`Complete Connection String = ${db}`);
 
-mongoose
-  .connect(db, {
-    useCreateIndex: true,
-    useFindAndModify: false,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then((conn) => {
-    // console.log(conn.connections);
-    // console.log(`Db Connection: ${db} - succesful.`);
-    console.log(`Db Connection ${conn.Connection.name} - succesful.`);
-  });
+// mongoose
+//   .connect(db, {
+//     useCreateIndex: true,
+//     useFindAndModify: false,
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+// mongoose
+//   .connect(DB, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+mongoose.connect(db).then((conn) => {
+  // console.log(conn.connections);
+  // console.log(`Db Connection: ${db} - succesful.`);
+  console.log(`Db Connection ${conn.Connection.name} - succesful.`);
+});
 
 // console.log(process.env);
 
